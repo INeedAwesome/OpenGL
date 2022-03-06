@@ -151,18 +151,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Engine\Shaders\Shader.cpp" />
     <ClCompile Include="src\Engine\Buffers\IndexBuffer.cpp" />
     <ClCompile Include="src\Engine\Renderer\Renderer.cpp" />
     <ClCompile Include="src\App\Application.cpp" />
     <ClCompile Include="src\Engine\Buffers\VertexBuffer.cpp" />
+    <ClCompile Include="src\Engine\Buffers\VertexArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\shader.shader" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Engine\Shaders\Shader.h" />
     <ClInclude Include="src\Engine\Buffers\IndexBuffer.h" />
     <ClInclude Include="src\Engine\Renderer\Renderer.h" />
     <ClInclude Include="src\Engine\Buffers\VertexBuffer.h" />
+    <ClInclude Include="src\Engine\Buffers\VertexArray.h" />
+    <ClInclude Include="src\Engine\Buffers\VertexBufferLayout.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
