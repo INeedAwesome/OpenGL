@@ -8,14 +8,26 @@
 #include <iomanip>
 
 #include "Engine/Renderer/Renderer.h"
-#include "Engine/Buffers/IndexBuffer.h"
 #include "Engine/Buffers/VertexBuffer.h"
+#include "Engine/Buffers/VertexBufferLayout.h"
+#include "Engine/Buffers/IndexBuffer.h"
 #include "Engine/Buffers/VertexArray.h"
-#include "Engine/Shaders/Shader.h"
+#include "Engine/Shader/Shader.h"
+#include "Engine/Texture/Texture.h"
+#include "Engine/WindowingSystem/Window.h"
+
+#include "Tests/TestClearColor.h"
+
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 #define GAME_TITLE "OpenGL"
-#define GAME_RES_WIDTH 1152
-#define GAME_RES_HEIGHT 648
+#define GAME_RES_WIDTH 960
+#define GAME_RES_HEIGHT 540
 // https://pacoup.com/2011/06/12/list-of-true-169-resolutions/
 
 #define ERR_OK 0
@@ -24,32 +36,16 @@
 #define ERR_GLEWINIT -11
 #define ERR_WIN_CREATION_FAIL -20
 
-typedef unsigned int uint;
-
 int main(void)
 {
-	GLFWwindow* window;
-	/* Initialize the library */
 	if (!glfwInit())
 		return ERR_GLFWINIT;
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(GAME_RES_WIDTH, GAME_RES_HEIGHT, GAME_TITLE, NULL, NULL);
-	if (!window)
-	{
-		glfwTerminate();
+	Window window(GAME_RES_WIDTH, GAME_RES_HEIGHT, GAME_TITLE);
+	window.SetDefaultWindowHints();
+	if (!window.CreateWindow())
 		return ERR_WIN_CREATION_FAIL;
-	}
-	/* Make the window's context current */
-	glfwMakeContextCurrent(window);
-	/* Center the window of the screen asuming the user has a 1080p resolution */
-	glfwSetWindowPos(window, 1920/ 2 - GAME_RES_WIDTH / 2, 1080 / 2 - GAME_RES_HEIGHT / 2);
-
-	glfwSwapInterval(1);
+	window.SetVSync(true);
 
 	if (glewInit() != GLEW_OK)
 		std::cout << "Error! Code: " << ERR_GLEWINIT << std::endl;
@@ -58,64 +54,111 @@ int main(void)
 	//Begining of a new scope
 	{
 		float positions[] = {
-			-0.5f, -0.5f, // 0
-			 0.5f, -0.5f, // 1
-			 0.5f,  0.5f, // 2
-			-0.5f,  0.5f  // 3
+			-50.0f, -50.0f, 0.0f, 0.0f,	// 0
+			 50.0f,  -50.0f, 1.0f, 0.0f,	// 1
+			 50.0f,  50.0f, 1.0f, 1.0f,	// 2
+			-50.0f, 50.0f, 0.0f, 1.0f 	// 3
 		};
 
-		uint indices[] = {
+		unsigned int indices[] = {
 			0, 1, 2,
 			2, 3, 0
 		};
 
-		uint vao;
-		GLCall(glGenVertexArrays(1, &vao));
-		GLCall(glBindVertexArray(vao));
+		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+		GLCall(glEnable(GL_BLEND));
 
-		VertexArray va;
-		VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+		//VertexArray va;
+		//VertexBuffer vb(positions, 4 * 4 * sizeof(float));
 
-		VertexBufferLayout layout;
-		layout.Push<float>(2);
-		va.AddBuffer(vb, layout);
+		//VertexBufferLayout layout;
+		//layout.Push<float>(2);
+		//layout.Push<float>(2);
+		//va.AddBuffer(vb, layout);
 
-		IndexBuffer ib(indices, 6);
+		//IndexBuffer ib(indices, 6);
 
-		Shader shader("res/shaders/shader.shader");
-		shader.Bind();
+		//glm::mat4 proj = glm::ortho(0.0f, (float)GAME_RES_WIDTH, 0.0f, (float)GAME_RES_HEIGHT, -1.0f, 1.0f);
+		//glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
 
+		//Shader shader("res/shaders/shader.shader");
+		//shader.Bind();
+		//shader.SetUniform4f("u_Color", 0.2f, 0.6f, 0.8f, 1.0f);
 
-		shader.SetUniform4f("u_Color", 0.2, 0.6f, 0.8f, 1);
+		//Texture texture("res/textures/ChernoLogo.png");
+		//texture.Bind(0); 
+		//shader.SetUniform1i("u_Texture", 0);
 
-		va.Unbind();
-		shader.Unbind();
-		vb.Unbind();
-		ib.Unbind();
+		//va.Unbind();
+		//shader.Unbind();
+		//vb.Unbind();
+		//ib.Unbind();
+
+		Renderer renderer;
+
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;	// Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;	// Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;		// Enable Docking
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;		// Enable Multi-Viewport / Platform Windows
+		ImGui::StyleColorsDark();
+		ImGui_ImplOpenGL3_Init();
+		ImGui_ImplGlfw_InitForOpenGL(window.GetWindow(), true);
+
+		test::Test* currentTest = nullptr;
+		test::TestMenu* testMenu = new test::TestMenu(currentTest);
+		currentTest = testMenu;
+
+		testMenu->RegisterTest<test::TestClearColor>("Clear Color");
 
 		/* Loop until the user closes the window */
-		while (!glfwWindowShouldClose(window))
+		while (!glfwWindowShouldClose(window.GetWindow()))
 		{
-			/* Render here */
-			GLCall(glClear(GL_COLOR_BUFFER_BIT));
-			GLCall(glClearColor(0.1f, 0.1f, 0.1f, 1.0f));
+			renderer.Clear();
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
 
-			shader.Bind();
-			
-			shader.SetUniform4f( "u_Color", 0.5, 0.5f, 0.7f, 1.0f);
+			if (currentTest)
+			{
+				currentTest->onUpdate(0.0f);
+				currentTest->onRender();
+				ImGui::Begin("Test");
+				if (currentTest != testMenu && ImGui::Button("<-"))
+				{
+					delete currentTest;
+					currentTest = testMenu;
+				}
+				currentTest->onImGuiRender();
+				ImGui::End();
+			}
 
-			va.Bind();
-			ib.Bind();
-			GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+			{
+				GLFWwindow* backup_current_context = glfwGetCurrentContext();
+				ImGui::UpdatePlatformWindows();
+				ImGui::RenderPlatformWindowsDefault();
+				glfwMakeContextCurrent(backup_current_context);
+			}
 
-
-
-			GLCall(glfwSwapBuffers(window));
+			GLCall(glfwSwapBuffers(window.GetWindow()));
 			GLCall(glfwPollEvents());
 		}
+		delete currentTest;
+		if (currentTest != testMenu)
+		{
+			delete testMenu;
+		}
 	}
-	
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
 	glfwTerminate();
-	
+
 	return ERR_OK;
 }

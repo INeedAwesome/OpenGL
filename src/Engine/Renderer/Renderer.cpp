@@ -5,7 +5,7 @@
 
 void GLClearError()
 {
-	while (!glGetError != GL_NO_ERROR); // "resets / clears" the error "list"
+	while (glGetError() != GL_NO_ERROR); // "resets / clears" the error "list"
 }
 
 bool GLLogCall(const char* function, const char* file, int line)
@@ -33,4 +33,20 @@ bool GLLogCall(const char* function, const char* file, int line)
 		return false;
 	}
 	return true;
+}
+
+void Renderer::Clear() const
+{
+	GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+	GLCall(glClearColor(0, 0, 0, 1.0f));
+}
+
+void Renderer::Draw(VertexArray& va, const IndexBuffer& ib, const Shader& shader) const
+{ 
+	shader.Bind();
+	va.Bind();
+	ib.Bind();
+
+	GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
+
 }
